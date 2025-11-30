@@ -1,0 +1,168 @@
+---
+layout: base.njk
+title: TF-IDF Demo
+---
+
+<h1>TF-IDF Demonstration</h1>
+
+<h2>What is TF-IDF?</h2>
+
+<p><strong>TF-IDF</strong> (Term Frequency-Inverse Document Frequency) is a numerical statistic that reflects how important a word is to a document in a collection of documents.</p>
+
+<p><strong>TF (Term Frequency):</strong> How often a term appears in a document.<br>
+Formula: <code>TF = (Number of times term appears in document) / (Total number of terms in document)</code></p>
+
+<p><strong>IDF (Inverse Document Frequency):</strong> How rare or common a term is across all documents.<br>
+Formula: <code>IDF = log(Total number of documents / Number of documents containing the term)</code></p>
+
+<p><strong>TF-IDF:</strong> The product of TF and IDF.<br>
+Formula: <code>TF-IDF = TF × IDF</code></p>
+
+<h2>Interactive Demo</h2>
+
+<div id="demo">
+    <h3>Documents</h3>
+    <div id="documents">
+        <div class="doc-input">
+            <label>Document 1:</label>
+            <textarea id="doc1" rows="2">the cat sat on the mat</textarea>
+        </div>
+        <div class="doc-input">
+            <label>Document 2:</label>
+            <textarea id="doc2" rows="2">the dog sat on the log</textarea>
+        </div>
+        <div class="doc-input">
+            <label>Document 3:</label>
+            <textarea id="doc3" rows="2">cats and dogs are animals</textarea>
+        </div>
+    </div>
+
+    <button onclick="calculateTFIDF()" style="margin: 20px 0; padding: 10px 20px; font-size: 16px;">Calculate TF-IDF</button>
+
+    <div id="results"></div>
+</div>
+
+<style>
+    .doc-input {
+        margin: 10px 0;
+    }
+    .doc-input label {
+        display: inline-block;
+        width: 100px;
+        font-weight: bold;
+    }
+    .doc-input textarea {
+        width: 500px;
+        padding: 5px;
+        font-family: monospace;
+    }
+    table {
+        border-collapse: collapse;
+        margin: 20px 0;
+        width: 100%;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background-color: #4CAF50;
+        color: white;
+    }
+    tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+    .highlight {
+        background-color: #ffeb3b;
+        font-weight: bold;
+    }
+</style>
+
+<script>
+function calculateTFIDF() {
+    const doc1 = document.getElementById('doc1').value.toLowerCase();
+    const doc2 = document.getElementById('doc2').value.toLowerCase();
+    const doc3 = document.getElementById('doc3').value.toLowerCase();
+
+    const documents = [doc1, doc2, doc3];
+
+    // Tokenize documents
+    const tokenizedDocs = documents.map(doc => doc.split(/\s+/).filter(word => word.length > 0));
+
+    // Get all unique terms
+    const allTerms = new Set();
+    tokenizedDocs.forEach(doc => doc.forEach(term => allTerms.add(term)));
+
+    // Calculate TF for each document
+    const tfScores = tokenizedDocs.map(doc => {
+        const tf = {};
+        const totalTerms = doc.length;
+        doc.forEach(term => {
+            tf[term] = (tf[term] || 0) + 1;
+        });
+        // Normalize by document length
+        Object.keys(tf).forEach(term => {
+            tf[term] = tf[term] / totalTerms;
+        });
+        return tf;
+    });
+
+    // Calculate IDF
+    const idfScores = {};
+    const numDocs = documents.length;
+    allTerms.forEach(term => {
+        const docsWithTerm = tokenizedDocs.filter(doc => doc.includes(term)).length;
+        idfScores[term] = Math.log(numDocs / docsWithTerm);
+    });
+
+    // Calculate TF-IDF
+    const tfidfScores = tfScores.map(tf => {
+        const tfidf = {};
+        Object.keys(tf).forEach(term => {
+            tfidf[term] = tf[term] * idfScores[term];
+        });
+        return tfidf;
+    });
+
+    // Display results
+    displayResults(Array.from(allTerms), tfScores, idfScores, tfidfScores);
+}
+
+function displayResults(terms, tfScores, idfScores, tfidfScores) {
+    const resultsDiv = document.getElementById('results');
+
+    let html = '<h3>Results</h3>';
+
+    // Create table
+    html += '<table>';
+    html += '<tr><th>Term</th><th>IDF</th><th>Doc 1 TF</th><th>Doc 1 TF-IDF</th><th>Doc 2 TF</th><th>Doc 2 TF-IDF</th><th>Doc 3 TF</th><th>Doc 3 TF-IDF</th></tr>';
+
+    terms.sort().forEach(term => {
+        html += '<tr>';
+        html += `<td><strong>${term}</strong></td>`;
+        html += `<td>${idfScores[term].toFixed(3)}</td>`;
+
+        for (let i = 0; i < 3; i++) {
+            const tf = tfScores[i][term] || 0;
+            const tfidf = tfidfScores[i][term] || 0;
+            const highlightClass = tfidf > 0.1 ? 'highlight' : '';
+            html += `<td>${tf.toFixed(3)}</td>`;
+            html += `<td class="${highlightClass}">${tfidf.toFixed(3)}</td>`;
+        }
+
+        html += '</tr>';
+    });
+
+    html += '</table>';
+
+    html += '<h4>Interpretation</h4>';
+    html += '<p>Higher TF-IDF scores (highlighted) indicate terms that are important to a specific document. ';
+    html += 'Terms that appear in all documents have lower IDF scores, making them less distinctive.</p>';
+
+    resultsDiv.innerHTML = html;
+}
+
+// Calculate on page load
+window.addEventListener('load', calculateTFIDF);
+</script>

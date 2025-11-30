@@ -1,0 +1,234 @@
+---
+layout: base.njk
+title: BM25 Demo
+---
+
+<h1>BM25 Demonstration</h1>
+
+<h2>What is BM25?</h2>
+
+<p><strong>BM25</strong> (Best Matching 25) is a ranking function used in information retrieval to rank documents based on their relevance to a search query. It's an improvement over TF-IDF that addresses some of its limitations.</p>
+
+<p><strong>Key improvements over TF-IDF:</strong></p>
+<ul>
+    <li><strong>Term Frequency Saturation:</strong> Prevents very high term frequencies from dominating the score</li>
+    <li><strong>Document Length Normalization:</strong> Accounts for varying document lengths</li>
+    <li><strong>Tunable Parameters:</strong> k1 controls term frequency saturation, b controls document length normalization</li>
+</ul>
+
+<p><strong>Formula:</strong></p>
+<p><code>BM25(D, Q) = Σ IDF(qi) × (f(qi,D) × (k1 + 1)) / (f(qi,D) + k1 × (1 - b + b × |D| / avgdl))</code></p>
+
+<p>Where:</p>
+<ul>
+    <li><code>f(qi,D)</code> = frequency of term qi in document D</li>
+    <li><code>|D|</code> = length of document D</li>
+    <li><code>avgdl</code> = average document length</li>
+    <li><code>k1</code> = term frequency saturation parameter (typical: 1.2-2.0)</li>
+    <li><code>b</code> = length normalization parameter (typical: 0.75)</li>
+</ul>
+
+<h2>Interactive Demo</h2>
+
+<div id="demo">
+    <h3>Parameters</h3>
+    <div style="margin: 10px 0;">
+        <label style="display: inline-block; width: 150px;"><strong>k1</strong> (saturation):</label>
+        <input type="number" id="k1" value="1.5" step="0.1" min="0" max="3" style="width: 80px;">
+        <span style="margin-left: 10px; color: #666;">Controls term frequency saturation</span>
+    </div>
+    <div style="margin: 10px 0;">
+        <label style="display: inline-block; width: 150px;"><strong>b</strong> (length norm):</label>
+        <input type="number" id="b" value="0.75" step="0.05" min="0" max="1" style="width: 80px;">
+        <span style="margin-left: 10px; color: #666;">Controls document length normalization</span>
+    </div>
+
+    <h3>Query</h3>
+    <div style="margin: 10px 0;">
+        <input type="text" id="query" value="cat sat" style="width: 500px; padding: 5px; font-family: monospace;">
+    </div>
+
+    <h3>Documents</h3>
+    <div id="documents">
+        <div class="doc-input">
+            <label>Document 1:</label>
+            <textarea id="doc1" rows="2">the cat sat on the mat</textarea>
+        </div>
+        <div class="doc-input">
+            <label>Document 2:</label>
+            <textarea id="doc2" rows="2">the dog sat on the log</textarea>
+        </div>
+        <div class="doc-input">
+            <label>Document 3:</label>
+            <textarea id="doc3" rows="2">cats and dogs are animals</textarea>
+        </div>
+    </div>
+
+    <button onclick="calculateBM25()" style="margin: 20px 0; padding: 10px 20px; font-size: 16px;">Calculate BM25</button>
+
+    <div id="results"></div>
+</div>
+
+<style>
+    .doc-input {
+        margin: 10px 0;
+    }
+    .doc-input label {
+        display: inline-block;
+        width: 100px;
+        font-weight: bold;
+    }
+    .doc-input textarea {
+        width: 500px;
+        padding: 5px;
+        font-family: monospace;
+    }
+    table {
+        border-collapse: collapse;
+        margin: 20px 0;
+        width: 100%;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background-color: #2196F3;
+        color: white;
+    }
+    tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+    .rank-1 {
+        background-color: #4CAF50;
+        color: white;
+        font-weight: bold;
+    }
+    .rank-2 {
+        background-color: #8BC34A;
+    }
+    .rank-3 {
+        background-color: #CDDC39;
+    }
+</style>
+
+<script>
+function calculateBM25() {
+    const k1 = parseFloat(document.getElementById('k1').value);
+    const b = parseFloat(document.getElementById('b').value);
+    const query = document.getElementById('query').value.toLowerCase();
+
+    const doc1 = document.getElementById('doc1').value.toLowerCase();
+    const doc2 = document.getElementById('doc2').value.toLowerCase();
+    const doc3 = document.getElementById('doc3').value.toLowerCase();
+
+    const documents = [doc1, doc2, doc3];
+
+    // Tokenize
+    const queryTerms = query.split(/\s+/).filter(word => word.length > 0);
+    const tokenizedDocs = documents.map(doc => doc.split(/\s+/).filter(word => word.length > 0));
+
+    // Calculate average document length
+    const avgdl = tokenizedDocs.reduce((sum, doc) => sum + doc.length, 0) / tokenizedDocs.length;
+
+    // Calculate IDF for each query term
+    const idfScores = {};
+    const N = documents.length;
+
+    queryTerms.forEach(term => {
+        const docsWithTerm = tokenizedDocs.filter(doc => doc.includes(term)).length;
+        // BM25 IDF formula
+        idfScores[term] = Math.log((N - docsWithTerm + 0.5) / (docsWithTerm + 0.5) + 1);
+    });
+
+    // Calculate BM25 score for each document
+    const bm25Scores = tokenizedDocs.map(doc => {
+        const docLength = doc.length;
+        let score = 0;
+
+        queryTerms.forEach(term => {
+            // Term frequency in document
+            const tf = doc.filter(t => t === term).length;
+
+            // BM25 formula
+            const numerator = tf * (k1 + 1);
+            const denominator = tf + k1 * (1 - b + b * (docLength / avgdl));
+            const termScore = idfScores[term] * (numerator / denominator);
+
+            score += termScore;
+        });
+
+        return score;
+    });
+
+    // Display results
+    displayResults(queryTerms, idfScores, tokenizedDocs, bm25Scores, avgdl, k1, b);
+}
+
+function displayResults(queryTerms, idfScores, tokenizedDocs, bm25Scores, avgdl, k1, b) {
+    const resultsDiv = document.getElementById('results');
+
+    let html = '<h3>Results</h3>';
+
+    // Document ranking table
+    html += '<h4>Document Ranking</h4>';
+    html += '<table>';
+    html += '<tr><th>Rank</th><th>Document</th><th>Length</th><th>BM25 Score</th></tr>';
+
+    // Create array of [index, score] and sort by score descending
+    const rankedDocs = bm25Scores
+        .map((score, idx) => ({ idx, score }))
+        .sort((a, b) => b.score - a.score);
+
+    rankedDocs.forEach((doc, rank) => {
+        const rankClass = rank === 0 ? 'rank-1' : rank === 1 ? 'rank-2' : rank === 2 ? 'rank-3' : '';
+        html += '<tr>';
+        html += `<td class="${rankClass}">${rank + 1}</td>`;
+        html += `<td class="${rankClass}">Document ${doc.idx + 1}</td>`;
+        html += `<td class="${rankClass}">${tokenizedDocs[doc.idx].length}</td>`;
+        html += `<td class="${rankClass}">${doc.score.toFixed(4)}</td>`;
+        html += '</tr>';
+    });
+
+    html += '</table>';
+
+    // Query term analysis
+    html += '<h4>Query Term Analysis</h4>';
+    html += '<table>';
+    html += '<tr><th>Term</th><th>IDF</th><th>Doc 1 TF</th><th>Doc 2 TF</th><th>Doc 3 TF</th></tr>';
+
+    queryTerms.forEach(term => {
+        html += '<tr>';
+        html += `<td><strong>${term}</strong></td>`;
+        html += `<td>${idfScores[term].toFixed(4)}</td>`;
+
+        for (let i = 0; i < 3; i++) {
+            const tf = tokenizedDocs[i].filter(t => t === term).length;
+            html += `<td>${tf}</td>`;
+        }
+
+        html += '</tr>';
+    });
+
+    html += '</table>';
+
+    // Parameters info
+    html += '<h4>Calculation Details</h4>';
+    html += '<p>';
+    html += `Average document length: <strong>${avgdl.toFixed(2)}</strong><br>`;
+    html += `k1 parameter: <strong>${k1}</strong><br>`;
+    html += `b parameter: <strong>${b}</strong>`;
+    html += '</p>';
+
+    html += '<h4>Interpretation</h4>';
+    html += '<p>Documents are ranked by BM25 score (highest first). ';
+    html += 'Higher scores indicate better matches to the query. ';
+    html += 'The top-ranked document is highlighted in green.</p>';
+
+    resultsDiv.innerHTML = html;
+}
+
+// Calculate on page load
+window.addEventListener('load', calculateBM25);
+</script>
