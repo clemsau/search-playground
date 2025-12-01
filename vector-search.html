@@ -1,0 +1,397 @@
+---
+layout: base.njk
+title: Vector Search Demo
+---
+
+<h1>Vector Search Demonstration</h1>
+
+<h2>What is Vector Search?</h2>
+
+<p><strong>Vector Search</strong> (also called semantic search) represents text as numerical vectors in a multi-dimensional space. Similar documents are positioned close to each other in this space.</p>
+
+<p><strong>Key Concepts:</strong></p>
+<ul>
+    <li><strong>Document Embeddings:</strong> Text is converted into numerical vectors (arrays of numbers)</li>
+    <li><strong>Vector Space:</strong> Documents exist as points in a multi-dimensional space</li>
+    <li><strong>Similarity:</strong> Measured by distance or angle between vectors</li>
+    <li><strong>Cosine Similarity:</strong> Measures the cosine of the angle between two vectors (ranges from -1 to 1, where 1 = identical)</li>
+</ul>
+
+<p><strong>Formula for Cosine Similarity:</strong></p>
+<p><code>similarity = (A · B) / (||A|| × ||B||)</code></p>
+<p>Where A · B is the dot product and ||A|| is the magnitude (length) of vector A.</p>
+
+<h2>Interactive Demo</h2>
+
+<div id="demo">
+    <h3>Query</h3>
+    <div style="margin: 10px 0;">
+        <input type="text" id="query" value="cat animal" style="width: 500px; padding: 5px; font-family: monospace;">
+    </div>
+
+    <h3>Documents</h3>
+    <div id="documents">
+        <div class="doc-input">
+            <label>Document 1:</label>
+            <textarea id="doc1" rows="2">cat sits on mat</textarea>
+        </div>
+        <div class="doc-input">
+            <label>Document 2:</label>
+            <textarea id="doc2" rows="2">dog runs in park</textarea>
+        </div>
+        <div class="doc-input">
+            <label>Document 3:</label>
+            <textarea id="doc3" rows="2">bird flies high</textarea>
+        </div>
+        <div class="doc-input">
+            <label>Document 4:</label>
+            <textarea id="doc4" rows="2">cat and dog are animals</textarea>
+        </div>
+    </div>
+
+    <button onclick="calculateVectorSearch()" style="margin: 20px 0; padding: 10px 20px; font-size: 16px;">Calculate Vector Search</button>
+
+    <div style="display: flex; gap: 30px; margin-top: 20px;">
+        <div style="flex: 1;">
+            <h3>2D Visualization</h3>
+            <canvas id="vectorCanvas" width="500" height="500" style="border: 1px solid #ccc; background: #f9f9f9;"></canvas>
+            <p style="font-size: 12px; color: #666;">
+                Note: Vectors are projected to 2D using the first two principal components for visualization.
+            </p>
+        </div>
+        <div style="flex: 1;">
+            <div id="results"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .doc-input {
+        margin: 10px 0;
+    }
+    .doc-input label {
+        display: inline-block;
+        width: 100px;
+        font-weight: bold;
+    }
+    .doc-input textarea {
+        width: 500px;
+        padding: 5px;
+        font-family: monospace;
+    }
+    table {
+        border-collapse: collapse;
+        margin: 20px 0;
+        width: 100%;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background-color: #9C27B0;
+        color: white;
+    }
+    tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+    .rank-1 {
+        background-color: #4CAF50;
+        color: white;
+        font-weight: bold;
+    }
+    .rank-2 {
+        background-color: #8BC34A;
+    }
+    .rank-3 {
+        background-color: #CDDC39;
+    }
+</style>
+
+<script>
+function calculateVectorSearch() {
+    const query = document.getElementById('query').value.toLowerCase();
+    const doc1 = document.getElementById('doc1').value.toLowerCase();
+    const doc2 = document.getElementById('doc2').value.toLowerCase();
+    const doc3 = document.getElementById('doc3').value.toLowerCase();
+    const doc4 = document.getElementById('doc4').value.toLowerCase();
+
+    const documents = [doc1, doc2, doc3, doc4];
+
+    // Tokenize
+    const queryTokens = query.split(/\s+/).filter(word => word.length > 0);
+    const docTokens = documents.map(doc => doc.split(/\s+/).filter(word => word.length > 0));
+
+    // Build vocabulary (all unique terms)
+    const vocab = new Set();
+    queryTokens.forEach(term => vocab.add(term));
+    docTokens.forEach(doc => doc.forEach(term => vocab.add(term)));
+    const vocabArray = Array.from(vocab).sort();
+
+    // Create TF-IDF vectors
+    const numDocs = documents.length + 1; // +1 for query
+
+    // Calculate IDF
+    const idf = {};
+    vocabArray.forEach(term => {
+        let docCount = queryTokens.includes(term) ? 1 : 0;
+        docTokens.forEach(doc => {
+            if (doc.includes(term)) docCount++;
+        });
+        idf[term] = Math.log(numDocs / docCount);
+    });
+
+    // Create vectors
+    function createVector(tokens) {
+        const vector = [];
+        vocabArray.forEach(term => {
+            const tf = tokens.filter(t => t === term).length / tokens.length;
+            vector.push(tf * idf[term]);
+        });
+        return vector;
+    }
+
+    const queryVector = createVector(queryTokens);
+    const docVectors = docTokens.map(tokens => createVector(tokens));
+
+    // Calculate cosine similarity
+    function cosineSimilarity(vecA, vecB) {
+        let dotProduct = 0;
+        let magA = 0;
+        let magB = 0;
+
+        for (let i = 0; i < vecA.length; i++) {
+            dotProduct += vecA[i] * vecB[i];
+            magA += vecA[i] * vecA[i];
+            magB += vecB[i] * vecB[i];
+        }
+
+        magA = Math.sqrt(magA);
+        magB = Math.sqrt(magB);
+
+        if (magA === 0 || magB === 0) return 0;
+        return dotProduct / (magA * magB);
+    }
+
+    const similarities = docVectors.map(docVec => cosineSimilarity(queryVector, docVec));
+
+    // Project to 2D using first two dimensions with highest variance
+    const allVectors = [queryVector, ...docVectors];
+    const projected2D = projectTo2D(allVectors, vocabArray);
+
+    // Display results
+    displayResults(similarities, projected2D, vocabArray, queryVector, docVectors);
+    visualizeVectors(projected2D);
+}
+
+function projectTo2D(vectors, vocabArray) {
+    // Simple projection: use the two terms with highest variance across all vectors
+    const variances = [];
+
+    for (let i = 0; i < vocabArray.length; i++) {
+        const values = vectors.map(v => v[i]);
+        const mean = values.reduce((a, b) => a + b, 0) / values.length;
+        const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+        variances.push({ index: i, variance, term: vocabArray[i] });
+    }
+
+    variances.sort((a, b) => b.variance - a.variance);
+    const dim1 = variances[0]?.index ?? 0;
+    const dim2 = variances[1]?.index ?? 1;
+
+    return {
+        points: vectors.map(v => ({ x: v[dim1] || 0, y: v[dim2] || 0 })),
+        dim1: variances[0]?.term ?? vocabArray[0],
+        dim2: variances[1]?.term ?? vocabArray[1]
+    };
+}
+
+function visualizeVectors(projected2D) {
+    const canvas = document.getElementById('vectorCanvas');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    const padding = 60;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+
+    const points = projected2D.points;
+
+    // Find min/max for scaling
+    const xValues = points.map(p => p.x);
+    const yValues = points.map(p => p.y);
+    const xMin = Math.min(...xValues);
+    const xMax = Math.max(...xValues);
+    const yMin = Math.min(...yValues);
+    const yMax = Math.max(...yValues);
+
+    // Add some margin
+    const xRange = (xMax - xMin) || 1;
+    const yRange = (yMax - yMin) || 1;
+
+    function scaleX(x) {
+        return padding + ((x - xMin) / xRange) * (width - 2 * padding);
+    }
+
+    function scaleY(y) {
+        return height - padding - ((y - yMin) / yRange) * (height - 2 * padding);
+    }
+
+    // Draw axes
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding, height - padding);
+    ctx.lineTo(width - padding, height - padding);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, height - padding);
+    ctx.stroke();
+
+    // Draw axis labels
+    ctx.fillStyle = '#666';
+    ctx.font = '12px Arial';
+    ctx.fillText(projected2D.dim1 || 'Dimension 1', width / 2, height - 20);
+    ctx.save();
+    ctx.translate(20, height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(projected2D.dim2 || 'Dimension 2', 0, 0);
+    ctx.restore();
+
+    // Draw query vector (red star)
+    const queryPoint = points[0];
+    const qx = scaleX(queryPoint.x);
+    const qy = scaleY(queryPoint.y);
+
+    ctx.fillStyle = '#f44336';
+    ctx.strokeStyle = '#c62828';
+    ctx.lineWidth = 2;
+    drawStar(ctx, qx, qy, 5, 12, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Draw arrow from origin to query
+    ctx.strokeStyle = '#f44336';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    const originX = scaleX(0);
+    const originY = scaleY(0);
+    drawArrow(ctx, originX, originY, qx, qy);
+    ctx.setLineDash([]);
+
+    // Label query
+    ctx.fillStyle = '#f44336';
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText('Query', qx + 15, qy);
+
+    // Draw document vectors (blue circles)
+    for (let i = 1; i < points.length; i++) {
+        const point = points[i];
+        const x = scaleX(point.x);
+        const y = scaleY(point.y);
+
+        ctx.fillStyle = '#2196F3';
+        ctx.strokeStyle = '#1976D2';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw arrow from origin
+        ctx.strokeStyle = '#2196F3';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        drawArrow(ctx, originX, originY, x, y);
+        ctx.setLineDash([]);
+
+        // Label
+        ctx.fillStyle = '#2196F3';
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText(`Doc ${i}`, x + 12, y);
+    }
+}
+
+function drawArrow(ctx, fromX, fromY, toX, toY) {
+    const headlen = 10;
+    const angle = Math.atan2(toY - fromY, toX - fromX);
+
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.lineTo(toX, toY);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(toX, toY);
+    ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+    ctx.moveTo(toX, toY);
+    ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+    ctx.stroke();
+}
+
+function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+    let rot = Math.PI / 2 * 3;
+    let x = cx;
+    let y = cy;
+    const step = Math.PI / spikes;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerRadius);
+
+    for (let i = 0; i < spikes; i++) {
+        x = cx + Math.cos(rot) * outerRadius;
+        y = cy + Math.sin(rot) * outerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+
+        x = cx + Math.cos(rot) * innerRadius;
+        y = cy + Math.sin(rot) * innerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+    }
+
+    ctx.lineTo(cx, cy - outerRadius);
+    ctx.closePath();
+}
+
+function displayResults(similarities, projected2D, vocabArray, queryVector, docVectors) {
+    const resultsDiv = document.getElementById('results');
+
+    let html = '<h3>Similarity Scores</h3>';
+
+    // Create ranking
+    const ranked = similarities
+        .map((sim, idx) => ({ idx: idx + 1, similarity: sim }))
+        .sort((a, b) => b.similarity - a.similarity);
+
+    html += '<table>';
+    html += '<tr><th>Rank</th><th>Document</th><th>Cosine Similarity</th></tr>';
+
+    ranked.forEach((item, rank) => {
+        const rankClass = rank === 0 ? 'rank-1' : rank === 1 ? 'rank-2' : rank === 2 ? 'rank-3' : '';
+        html += '<tr>';
+        html += `<td class="${rankClass}">${rank + 1}</td>`;
+        html += `<td class="${rankClass}">Document ${item.idx}</td>`;
+        html += `<td class="${rankClass}">${item.similarity.toFixed(4)}</td>`;
+        html += '</tr>';
+    });
+
+    html += '</table>';
+
+    html += '<h4>Vector Representation</h4>';
+    html += '<p style="font-size: 13px;">Each document and query is represented as a TF-IDF vector in ' + vocabArray.length + '-dimensional space.</p>';
+    html += '<p style="font-size: 13px;">The visualization shows a 2D projection using the terms "<strong>' + projected2D.dim1 + '</strong>" and "<strong>' + projected2D.dim2 + '</strong>" which have the highest variance.</p>';
+
+    html += '<h4>Interpretation</h4>';
+    html += '<p>Documents with higher cosine similarity (closer to 1) are more similar to the query. ';
+    html += 'In the visualization, closer vectors indicate higher similarity.</p>';
+
+    resultsDiv.innerHTML = html;
+}
+
+// Calculate on page load
+window.addEventListener('load', calculateVectorSearch);
+</script>
