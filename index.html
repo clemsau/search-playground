@@ -3,4 +3,203 @@ layout: base.njk
 title: Home
 ---
 
-<p>Search playground</p>
+<style>
+  .intro-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .intro-section h2 {
+    color: #333;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+  }
+
+  .intro-section h3 {
+    color: #555;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.3rem;
+  }
+
+  .intro-section p {
+    line-height: 1.7;
+    color: #444;
+    margin-bottom: 1rem;
+  }
+
+  .hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 8px;
+    margin-bottom: 2.5rem;
+    text-align: center;
+  }
+
+  .hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .hero p {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  .demo-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .demo-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    background: white;
+  }
+
+  .demo-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .demo-card h3 {
+    margin-top: 0;
+    font-size: 1.5rem;
+  }
+
+  .demo-card.tfidf h3 {
+    color: #4CAF50;
+  }
+
+  .demo-card.bm25 h3 {
+    color: #2196F3;
+  }
+
+  .demo-card.vector h3 {
+    color: #9C27B0;
+  }
+
+  .demo-card p {
+    color: #666;
+    line-height: 1.6;
+  }
+
+  .demo-card a {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.5rem 1.5rem;
+    background: #333;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  .demo-card a:hover {
+    background: #555;
+  }
+</style>
+
+<div class="hero">
+  <h1>Search & Information Retrieval Playground</h1>
+  <p>Interactive demonstrations of how search engines match your queries to relevant documents</p>
+</div>
+
+<div class="intro-section">
+  <h2>Understanding Search</h2>
+  <p>
+    Every day, we rely on search engines to find information in vast collections of documents. Whether it's searching
+    the web,
+    finding an email in your inbox, or looking up a product in an online store, the fundamental challenge is the same:
+    <strong>how do we identify the most relevant documents for a given query?</strong>
+  </p>
+
+  <p>
+    This playground explores the core algorithms that power search systems, from traditional keyword-based approaches
+    to modern semantic search techniques. Each demo is interactive—you can modify queries and documents to see exactly
+    how different ranking algorithms work under the hood.
+  </p>
+</div>
+
+<div class="intro-section">
+  <h2>The Two Paradigms of Search</h2>
+
+  <h3>Keyword-Based Search</h3>
+  <p>
+    Traditional search systems rely on <strong>lexical matching</strong>—they look for overlapping words between your
+    query
+    and documents. The key insight is that not all words are equally important. A document that mentions "quantum"
+    repeatedly
+    when most documents don't is probably more relevant for a query about "quantum physics" than one that just happens
+    to
+    use the word "the" many times.
+  </p>
+
+  <p>
+    Algorithms like <strong>TF-IDF</strong> and <strong>BM25</strong> formalize this intuition by balancing term
+    frequency
+    (how often a word appears in a document) against document frequency (how common that word is across all documents).
+    BM25 goes further by addressing issues like term saturation and document length normalization.
+  </p>
+
+  <h3>Semantic Search</h3>
+  <p>
+    Modern search systems go beyond simple keyword matching by understanding <strong>meaning</strong>. Vector search
+    represents
+    queries and documents as high-dimensional vectors, where similar concepts live close together in vector space. This
+    allows
+    the system to find documents that are semantically related to your query, even if they don't share exact words.
+  </p>
+
+  <p>
+    For example, a search for "machine learning" might return documents about "neural networks" or "artificial
+    intelligence"
+    because these concepts are embedded near each other in the vector space.
+  </p>
+</div>
+
+<div class="intro-section">
+  <h2>Explore the Algorithms</h2>
+  <p>
+    Three interactive demos to help you understand how these algorithms work in practice. Each demo lets you
+    edit queries and documents, adjust parameters, and see the results in real-time.
+  </p>
+
+  <div class="demo-cards">
+    <div class="demo-card tfidf">
+      <h3>TF-IDF</h3>
+      <p>
+        <strong>Term Frequency-Inverse Document Frequency</strong> is the foundation of keyword-based search.
+        See how it identifies important terms by balancing how often words appear in a document against how rare
+        they are across your entire collection.
+      </p>
+      <p><em>Best for: Understanding the basics of relevance ranking</em></p>
+      <a href="/tf-idf">Try TF-IDF Demo →</a>
+    </div>
+
+    <div class="demo-card bm25">
+      <h3>BM25</h3>
+      <p>
+        <strong>Best Matching 25</strong> improves on TF-IDF with term frequency saturation and document length
+        normalization. Experiment with the k1 and b parameters to see how they affect ranking in different scenarios.
+      </p>
+      <p><em>Best for: Understanding production-grade keyword search</em></p>
+      <a href="/bm25">Try BM25 Demo →</a>
+    </div>
+
+    <div class="demo-card vector">
+      <h3>Vector Search</h3>
+      <p>
+        <strong>Semantic search</strong> using vector representations and cosine similarity. Watch as documents are
+        ranked by their semantic closeness to your query, with a 2D visualization showing the geometry of similarity.
+      </p>
+      <p><em>Best for: Understanding modern semantic search</em></p>
+      <a href="/vector-search">Try Vector Search Demo →</a>
+    </div>
+  </div>
+</div>
