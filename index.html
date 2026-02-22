@@ -107,68 +107,74 @@ title: Home
 
 <div class="hero">
   <h1>Search & Information Retrieval Playground</h1>
-  <p>Interactive demonstrations of how search engines match your queries to relevant documents</p>
+  <p>Interactive demonstrations of the basic principles behind search engines</p>
 </div>
 
 <div class="intro-section">
   <h2>Understanding Search</h2>
   <p>
-    Every day, we rely on search engines to find information in vast collections of documents. Whether it's searching
-    the web,
-    finding an email in your inbox, or looking up a product in an online store, the fundamental challenge is the same:
-    <strong>how do we identify the most relevant documents for a given query?</strong>
+    Thanks to computers, we were able in the most recent decades to store efficiently more information than ever before.
+    Searching effectively through all these information, and finding the right document we are searching for is key to
+    make good use of this ever growing amount of data.
+  </p>
+
+  <p>Some search technics can be pretty advanced, but the basis of what we call <a
+      href="https://en.wikipedia.org/wiki/Information_retrieval">Information Retrieval</a> can be explained pretty
+    simply.
   </p>
 
   <p>
     This playground explores the core algorithms that power search systems, from traditional keyword-based approaches
-    to modern semantic search techniques. Each demo is interactive—you can modify queries and documents to see exactly
-    how different ranking algorithms work under the hood.
+    to modern semantic search techniques. Each demo is interactive, and should be played with to better understand the
+    pros and cons of each technic explored.
   </p>
 </div>
 
 <div class="intro-section">
   <h2>The Two Paradigms of Search</h2>
 
+  There are two main paradigms in search: <strong>keyword-based search</strong> and <strong>semantic search</strong>.
+
   <h3>Keyword-Based Search</h3>
   <p>
-    Traditional search systems rely on <strong>lexical matching</strong>—they look for overlapping words between your
-    query
-    and documents. The key insight is that not all words are equally important. A document that mentions "quantum"
-    repeatedly
-    when most documents don't is probably more relevant for a query about "quantum physics" than one that just happens
-    to
-    use the word "the" many times.
+    Traditional search systems rely on <strong>lexical matching</strong>, meaning that they look for overlapping words
+    between your
+    query and the documents.
   </p>
 
   <p>
-    Algorithms like <strong>TF-IDF</strong> and <strong>BM25</strong> formalize this intuition by balancing term
-    frequency
-    (how often a word appears in a document) against document frequency (how common that word is across all documents).
-    BM25 goes further by addressing issues like term saturation and document length normalization.
+    The key insight is that not all words are equally important. A document that mentions "quantum"
+    repeatedly when most documents don't is probably more relevant for a query about "quantum physics" than one that
+    just happens to use the word "the" many times.
+  </p>
+
+  <p>
+    <strong>TF-IDF</strong> is an algorithm that formalize this intuition by balancing term
+    frequency (how often a word appears in a document) against it's frequency in the corpus (how common it is across all
+    documents).
+  </p>
+
+  <p>
+    Another algorithm, <strong>BM25</strong>, goes even further by addressing issues like term saturation and document
+    length normalization.
   </p>
 
   <h3>Semantic Search</h3>
   <p>
-    Modern search systems go beyond simple keyword matching by understanding <strong>meaning</strong>. Vector search
-    represents
-    queries and documents as high-dimensional vectors, where similar concepts live close together in vector space. This
-    allows
-    the system to find documents that are semantically related to your query, even if they don't share exact words.
+    Modern search systems go beyond simple keyword matching by understanding <strong>meaning</strong>.
+  <p>Vector search capture the meaning of the queries and documents in what we call vectors. Mathematical objects that
+    allows us then to compute the proximity between the queries and documents</p>
+  <p>With this technique, even if they don't share a single word, a document that is semantically similar to your query
+    can be retrieved.
   </p>
-
   <p>
     For example, a search for "machine learning" might return documents about "neural networks" or "artificial
-    intelligence"
-    because these concepts are embedded near each other in the vector space.
+    intelligence" because these concepts are embedded near each other in the vector space.
   </p>
 </div>
 
 <div class="intro-section">
   <h2>Explore the Algorithms</h2>
-  <p>
-    Three interactive demos to help you understand how these algorithms work in practice. Each demo lets you
-    edit queries and documents, adjust parameters, and see the results in real-time.
-  </p>
 
   <div class="demo-cards">
     <div class="demo-card tfidf">
@@ -178,7 +184,6 @@ title: Home
         See how it identifies important terms by balancing how often words appear in a document against how rare
         they are across your entire collection.
       </p>
-      <p><em>Best for: Understanding the basics of relevance ranking</em></p>
       <a href="/tf-idf">Try TF-IDF Demo →</a>
     </div>
 
@@ -186,9 +191,8 @@ title: Home
       <h3>BM25</h3>
       <p>
         <strong>Best Matching 25</strong> improves on TF-IDF with term frequency saturation and document length
-        normalization. Experiment with the k1 and b parameters to see how they affect ranking in different scenarios.
+        normalization.
       </p>
-      <p><em>Best for: Understanding production-grade keyword search</em></p>
       <a href="/bm25">Try BM25 Demo →</a>
     </div>
 
@@ -198,7 +202,6 @@ title: Home
         <strong>Semantic search</strong> using vector representations and cosine similarity. Watch as documents are
         ranked by their semantic closeness to your query, with a 2D visualization showing the geometry of similarity.
       </p>
-      <p><em>Best for: Understanding modern semantic search</em></p>
       <a href="/vector-search">Try Vector Search Demo →</a>
     </div>
   </div>
